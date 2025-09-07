@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Curtiu o Som - Pop BH</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --brand-bg:#8430d9; --surface:#1e1e1e; --surface-2:#2a2a2a; --text:#fff; --muted:#a9a9a9; --accent:#ffde59; --like:#ff6aa3;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{font-family:Inter,system-ui,Arial;background:var(--brand-bg);color:var(--text);display:flex;justify-content:center;align-items:center;height:100vh;margin:0;padding:16px}
+    #app-container{width:100%;height:100%;max-width:1200px;max-height:800px;background:var(--surface);border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.5);padding:14px;display:flex;flex-direction:column;overflow:hidden}
+    #main-title{text-align:center;font-size:2rem;font-weight:700;margin:6px 0 10px}
+
+    .top-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+    .legend{font-size:.95rem;color:var(--muted)}
+    .right-actions{display:flex;align-items:center;gap:8px}
+    .chip{background:#343434;padding:6px 10px;border-radius:999px;font-size:.85rem;color:#ddd;border:1px solid #404040}
+    .btn{background:#555;color:#fff;padding:8px 12px;border-radius:10px;border:none;cursor:pointer;font-size:14px;font-weight:700}
+    .btn:hover{background:#777}
+
+    /* Ranking */
+    #ranking{display:grid;grid-template-columns:1fr;gap:6px;margin-bottom:10px}
+    .rank-row{display:flex;align-items:center;justify-content:space-between;background:#242424;border:1px solid #333;border-radius:10px;padding:8px 10px;font-weight:700}
+    .rank-left{display:flex;align-items:center;gap:8px}
+    .rank-pos{width:28px;text-align:center}
+    .rank-count{background:#101010;border:1px solid #3a3a3a;padding:4px 8px;border-radius:999px}
+
+    /* Grid */
+    #artist-select-screen{flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;overflow-y:auto}
+    .artist-card{background:var(--surface-2);border-radius:12px;cursor:pointer;transition:.2s;overflow:hidden;display:flex;flex-direction:column;position:relative}
+    .artist-card:hover{transform:translateY(-6px);box-shadow:0 10px 20px rgba(0,0,0,.3)}
+    .artist-image{width:100%;height:150px;object-fit:cover;border-bottom:2px solid #333}
+    .artist-info{padding:12px;font-weight:800;font-size:1rem;text-align:center}
+    .badge{position:absolute;top:10px;left:10px;background:rgba(0,0,0,.8);border:1px solid #3a3a3a;padding:6px 10px;border-radius:999px;font-weight:800}
+    .leader-ribbon{position:absolute;top:10px;right:-38px;transform:rotate(35deg);background:var(--accent);color:#1a1a1a;padding:4px 50px;font-weight:900;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+
+    /* Player */
+    #video-player-screen{flex:1;display:none;flex-direction:column;align-items:center;justify-content:flex-start;width:100%;height:100%;overflow-y:auto;padding:10px}
+    #video-player-container{width:100%;max-width:900px;aspect-ratio:16/9;position:relative;border-radius:12px;overflow:hidden;background:linear-gradient(180deg,#0f0f10,#161616)}
+    #video-player-container iframe,#video-player-container video{position:absolute;top:0;left:0;width:100%;height:100%}
+    .player-buttons{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;justify-content:center}
+    .player-button{background:#555;color:#fff;padding:10px 16px;border-radius:10px;border:none;cursor:pointer;font-size:15px;font-weight:700}
+    .player-button:hover{background:#777}
+    #youtube-button{background:#e0e0e0;color:#1e1e1e}
+    #youtube-button:hover{background:#cfcfcf}
+
+    .vote-inline{display:flex;align-items:center;gap:10px;margin-top:12px}
+    .like-button{background:var(--like);border:none;color:#1a1a1a;border-radius:10px;padding:10px 12px;font-weight:800;cursor:pointer}
+    .count-pill{background:#101010;border:1px solid #3a3a3a;color:#eaeaea;padding:6px 10px;border-radius:999px;font-weight:700;min-width:42px;text-align:center}
+
+    .custom-message{color:#e6e6e6;text-align:center;padding:24px;font-size:1.05rem}
+    .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.9);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;box-shadow:0 4px 18px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s}
+    .toast.show{opacity:1}
+
+    /* Modal de cadastro do ouvinte */
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:16px;z-index:9999}
+    .modal{width:100%;max-width:520px;background:#212121;border:1px solid #363636;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.45)}
+    .modal header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #303030;font-weight:800}
+    .modal .content{padding:16px;display:grid;gap:10px}
+    .modal label{font-size:.95rem;color:#eaeaea}
+    .modal input, .modal textarea{width:100%;background:#2a2a2a;border:1px solid #3a3a3a;color:#fff;border-radius:10px;padding:10px}
+    .modal .row{display:grid;grid-template-columns:1fr 1fr; gap:10px}
+    .modal .actions{display:flex;justify-content:flex-end;gap:10px;padding:14px 16px;border-top:1px solid #303030}
+    .modal .note{font-size:.85rem;color:#bdbdbd}
+    .modal .danger{color:#ff9ea4}
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <div id="main-title">Hub de Descobertas Curtiu o Som?!</div>
+
+    <div class="top-bar">
+      <div class="legend">Toque, assista e <strong>curta</strong> sua favorita. Kiosk: votos ilimitados neste dispositivo.</div>
+      <div class="right-actions">
+        <span class="chip" id="total-votes-chip">Votos totais: 0</span>
+        <button class="btn" id="export-btn" title="Exportar votos para CSV">Exportar CSV</button>
+        <button class="btn" id="toggle-sort">Ordenar por votos</button>
+        <button class="btn" id="reset-btn">Reset local</button>
+      </div>
+    </div>
+
+    <div id="ranking"></div>
+
+    <div id="artist-select-screen"></div>
+
+    <div id="video-player-screen">
+      <div id="video-player-container">
+        <div class="custom-message"><p>Escolha uma opção de vídeo para começar.</p></div>
+      </div>
+      <div class="player-buttons">
+        <button id="local-video-button" class="player-button">Tocar MP4 Local</button>
+        <button id="youtube-button" class="player-button">Assistir no YouTube</button>
+        <button id="back-button" class="player-button">Voltar aos Artistas</button>
+      </div>
+      <div class="vote-inline">
+        <button id="inline-like" class="like-button">💗 Curtir o Som</button>
+        <span class="count-pill" id="inline-count">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <!-- Modal de cadastro do ouvinte -->
+  <div id="overlay" class="overlay" role="dialog" aria-modal="true">
+    <div class="modal">
+      <header>
+        <span>Identificação do ouvinte</span>
+        <button id="close-modal" class="btn">Fechar</button>
+      </header>
+      <div class="content">
+        <p class="note">Preencha pelo menos <strong>uma</strong> forma de contato. Usaremos apenas para confirmar sua participação e novidades do Curtiu.</p>
+        <div class="row">
+          <div>
+            <label for="name">Nome (opcional)</label>
+            <input id="name" type="text" placeholder="Seu nome" />
+          </div>
+          <div>
+            <label for="insta">Instagram</label>
+            <input id="insta" type="text" placeholder="@seuarroba" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="whats">WhatsApp</label>
+            <input id="whats" type="tel" placeholder="(DDD) 9XXXX-XXXX" />
+          </div>
+          <div>
+            <label for="city">Cidade (opcional)</label>
+            <input id="city" type="text" placeholder="Sua cidade" />
+          </div>
+        </div>
+        <label for="note">Mensagem (opcional)</label>
+        <textarea id="note" rows="2" placeholder="Deixe um recadinho para o artista 😊"></textarea>
+        <p class="note">Ao salvar, você concorda em receber comunicações do Curtiu Som relacionadas a esta participação. <span class="danger">Se não quiser, você pode votar sem contato — clique “Pular”.</span></p>
+      </div>
+      <div class="actions">
+        <button id="skip-btn" class="btn">Pular</button>
+        <button id="save-btn" class="btn">Salvar e votar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ======= CONFIG =======
+    const STORAGE_VOTES_KEY = 'curtiuVotes_v3'; // versão nova
+    const STORAGE_LOG_KEY   = 'curtiuVotersLog_v1'; // log de ouvintes
+    const VOTE_POLICY = { kioskMode: true, cooldownMs: 1000 };
+
+    const ARTISTES = [
+      { name:'Bia Bergman', image:'https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/84/43/07/84430773-40e2-5c56-f26f-21cb15ce16d9/0632627990442.jpg/1200x630bb.jpg', youtubeId:'YmETR2uzlT0', localVideoPath:'bia_bergman_clipe.mp4' },
+      { name:'Gustavo Fraga', image:'https://m.media-amazon.com/images/I/51w3i1OOtRL._UXNaN_FMjpg_QL85_.jpg', youtubeId:'0AuXtb04wNo', localVideoPath:'gustavo_fraga_clipe.mp4' },
+      { name:'Jota Pê Rocha', image:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR__10Zigw8LnYIrejnExnkWlWMd101I9LfyQ&s', youtubeId:'vQkGaY78jsw', localVideoPath:'grupo_gamma.mp4' },
+      { name:'THATHI', image:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQypJYCNBF0gPVvhNoHpTrlo8SgohiN14djPg&s', youtubeId:'U3o8xI-o240', localVideoPath:'dj_delta.mp4' }
+    ];
+
+    // ======= STORAGE =======
+    const loadVotes = () => JSON.parse(localStorage.getItem(STORAGE_VOTES_KEY) || '{}');
+    const saveVotes = (obj) => localStorage.setItem(STORAGE_VOTES_KEY, JSON.stringify(obj));
+    const loadLog   = () => JSON.parse(localStorage.getItem(STORAGE_LOG_KEY) || '[]');
+    const saveLog   = (arr) => localStorage.setItem(STORAGE_LOG_KEY, JSON.stringify(arr));
+    const totalVotes = (votes) => Object.values(votes).reduce((a,b)=> a + (+b||0), 0);
+
+    // ======= DOM =======
+    const gridEl = document.getElementById('artist-select-screen');
+    const playerEl = document.getElementById('video-player-screen');
+    const playerContainerEl = document.getElementById('video-player-container');
+    const btnBack = document.getElementById('back-button');
+    const btnLocal = document.getElementById('local-video-button');
+    const btnYT = document.getElementById('youtube-button');
+    const btnInlineLike = document.getElementById('inline-like');
+    const inlineCount = document.getElementById('inline-count');
+    const chipTotal = document.getElementById('total-votes-chip');
+    const btnSort = document.getElementById('toggle-sort');
+    const btnReset = document.getElementById('reset-btn');
+    const btnExport = document.getElementById('export-btn');
+    const rankingEl = document.getElementById('ranking');
+    const toastEl = document.getElementById('toast');
+
+    // Modal
+    const overlay = document.getElementById('overlay');
+    const closeModalBtn = document.getElementById('close-modal');
+    const saveBtn = document.getElementById('save-btn');
+    const skipBtn = document.getElementById('skip-btn');
+    const fName = document.getElementById('name');
+    const fInsta = document.getElementById('insta');
+    const fWhats = document.getElementById('whats');
+    const fCity  = document.getElementById('city');
+    const fNote  = document.getElementById('note');
+
+    // ======= STATE =======
+    let currentArtist = null;
+    let sortByVotes = true;
+    let lastVoteAt = 0;
+
+    function showToast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); setTimeout(()=>toastEl.classList.remove('show'), 1300); }
+    function getYTUrl(a){ const id=a.youtubeId||''; return (id.startsWith('http')||id.includes('watch?v='))? id : `https://www.youtube.com/watch?v=${id}`; }
+    function computeRanking(votes){ return ARTISTES.map(a=>({name:a.name,count:+(votes[a.name]||0)})).sort((x,y)=>y.count-x.count); }
+
+    // ======= RENDER =======
+    function renderRanking(){ const votes=loadVotes(); const rank=computeRanking(votes); const medal=['🥇','🥈','🥉']; rankingEl.innerHTML=''; rank.slice(0,3).forEach((r,i)=>{ const row=document.createElement('div'); row.className='rank-row'; row.innerHTML=`<div class="rank-left"><span class="rank-pos">${medal[i]||`#${i+1}`}</span><span>${r.name}</span></div><div class="rank-count">${r.count}</div>`; rankingEl.appendChild(row); }); chipTotal.textContent = `Votos totais: ${totalVotes(votes)}`; }
+
+    function renderGrid(){
+      const votes=loadVotes();
+      const leader = computeRanking(votes)[0]?.name;
+      const list=[...ARTISTES];
+      if (sortByVotes) list.sort((a,b)=>(votes[b.name]||0)-(votes[a.name]||0));
+      gridEl.innerHTML='';
+      list.forEach(a=>{
+        const count=+(votes[a.name]||0);
+        const card=document.createElement('div');
+        card.className='artist-card';
+        card.innerHTML=`
+          <img class="artist-image" src="${a.image}" alt="${a.name}" />
+          <div class="badge">💗 ${count}</div>
+          ${leader===a.name && count>0 ? '<div class="leader-ribbon">TOP 1</div>' : ''}
+          <div class="artist-info">${a.name}</div>`;
+        card.addEventListener('click',()=> showPlayer(a));
+        gridEl.appendChild(card);
+      });
+    }
+
+    function showPlayer(artist){
+      currentArtist = artist;
+      gridEl.style.display='none';
+      playerEl.style.display='flex';
+      playerContainerEl.innerHTML = '<div class="custom-message"><p>Escolha uma opção de vídeo para começar.</p></div>';
+      const votes=loadVotes();
+      inlineCount.textContent = votes[artist.name]||0;
+      btnLocal.style.display = artist.localVideoPath ? 'inline-block' : 'none';
+      btnYT.style.display = artist.youtubeId ? 'inline-block' : 'none';
+    }
+
+    function backToGrid(){ playerContainerEl.innerHTML=''; playerEl.style.display='none'; gridEl.style.display='grid'; renderRanking(); renderGrid(); }
+
+    function playLocal(){ if(!currentArtist) return; playerContainerEl.innerHTML=''; const v=document.createElement('video'); v.src=currentArtist.localVideoPath; v.controls=true; v.autoplay=true; playerContainerEl.appendChild(v); }
+    function playYT(){ if(!currentArtist) return; window.open(getYTUrl(currentArtist),'_blank'); }
+
+    // ======= MODAL (cadastro do ouvinte) =======
+    function openModal(){ overlay.style.display='flex'; setTimeout(()=> fInsta.focus(), 50); }
+    function closeModal(){ overlay.style.display='none'; }
+    closeModalBtn.addEventListener('click', closeModal);
+    skipBtn.addEventListener('click', ()=>{ closeModal(); doVote(); });
+    saveBtn.addEventListener('click', ()=>{
+      const name=fName.value.trim();
+      const insta=fInsta.value.trim();
+      const whats=fWhats.value.trim();
+      const city=fCity.value.trim();
+      const note=fNote.value.trim();
+      if(!insta && !whats){ showToast('Informe Instagram ou WhatsApp (pelo menos um).'); return; }
+      const log = loadLog();
+      log.push({ ts:new Date().toISOString(), artist: currentArtist?.name||'', name, insta, whats, city, note });
+      saveLog(log);
+      closeModal();
+      doVote();
+    });
+
+    // ======= VOTO =======
+    function voteFlow(){
+      // abre modal de identificação antes de votar
+      openModal();
+    }
+
+    function doVote(){
+      if(!currentArtist) return;
+      const now=Date.now();
+      if(now - lastVoteAt < VOTE_POLICY.cooldownMs){ showToast('Aguarde um instante…'); return; }
+      lastVoteAt = now;
+      const votes=loadVotes();
+      votes[currentArtist.name] = +(votes[currentArtist.name]||0) + 1;
+      saveVotes(votes);
+      inlineCount.textContent = votes[currentArtist.name];
+      showToast('Voto computado! 💗');
+      renderRanking();
+      renderGrid();
+      // Limpa formulário para o próximo
+      fName.value=fInsta.value=fWhats.value=fCity.value=fNote.value='';
+    }
+
+    // ======= EXPORT =======
+    function exportCSV(){
+      const votes = loadVotes();
+      const log = loadLog();
+      // Planilha 1: votos agregados; Planilha 2 (aba única contínua aqui): log detalhado
+      let csv = 'Resumo por Artista\nArtista,Votos\n';
+      const names = ARTISTES.map(a=>a.name);
+      names.forEach(n=>{ csv += `${n},${votes[n]||0}\n`; });
+      csv += '\nLog detalhado (cada participação)\nData/Hora,Artista,Nome,Instagram,WhatsApp,Cidade,Mensagem\n';
+      log.forEach(r=>{ csv += `${r.ts},${r.artist},${(r.name||'').replaceAll(',',' ')},${(r.insta||'').replaceAll(',',' ')},${(r.whats||'').replaceAll(',',' ')},${(r.city||'').replaceAll(',',' ')},${(r.note||'').replaceAll(',',' ').replaceAll('\n',' ')}` + '\n'; });
+      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'curtiu_votos.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ======= EVENTS =======
+    btnInlineLike.addEventListener('click', voteFlow);
+    btnLocal.addEventListener('click', playLocal);
+    btnYT.addEventListener('click', playYT);
+    btnBack.addEventListener('click', backToGrid);
+    btnSort.addEventListener('click', ()=>{ sortByVotes = !sortByVotes; btnSort.textContent = sortByVotes ? 'Ordenar por ordem original' : 'Ordenar por votos'; renderGrid(); });
+    btnReset.addEventListener('click', ()=>{ if(!confirm('Limpar votos e cadastros locais?')) return; localStorage.removeItem(STORAGE_VOTES_KEY); localStorage.removeItem(STORAGE_LOG_KEY); renderRanking(); renderGrid(); if(currentArtist) inlineCount.textContent=0; showToast('Votos & cadastros locais limpos.'); });
+    btnExport.addEventListener('click', exportCSV);
+
+    // ======= INIT =======
+    (function init(){ renderRanking(); renderGrid(); gridEl.style.display='grid'; playerEl.style.display='none'; })();
+  </script>
+</body>
+</html>
